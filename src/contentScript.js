@@ -1,39 +1,57 @@
-function scrollToNextVideo() {
-  // For YouTube
-  if (window.location.host.includes("youtube.com")) {
-    const nextButton = document.querySelector(".ytp-next-button");
-    if (nextButton) {
-      nextButton.click();
-    }
-  }
+let autoScrollInterval;
 
-  // For Instagram
-  if (window.location.host.includes("instagram.com")) {
-    const nextButton = document.querySelector(
-      "a.coreSpriteRightPaginationArrow"
-    );
-    if (nextButton) {
-      nextButton.click();
+function startAutoScroll() {
+  if (window.location.hostname.includes("youtube.com")) {
+    const video = document.querySelector("video");
+    if (video) {
+      video.addEventListener("ended", handleYouTube);
+    }
+  } else if (window.location.hostname.includes("instagram.com")) {
+    const video = document.querySelector("video");
+    if (video) {
+      video.addEventListener("ended", handleInstagram);
     }
   }
 }
 
-function observeVideos() {
-  let videoElement;
-
-  // For YouTube
-  if (window.location.host.includes("youtube.com")) {
-    videoElement = document.querySelector("video");
+function stopAutoScroll() {
+  if (window.location.hostname.includes("youtube.com")) {
+    const video = document.querySelector("video");
+    if (video) {
+      video.removeEventListener("ended", handleYouTube);
+    }
+  } else if (window.location.hostname.includes("instagram.com")) {
+    const video = document.querySelector("video");
+    if (video) {
+      video.removeEventListener("ended", handleInstagram);
+    }
   }
+  clearInterval(autoScrollInterval);
+}
 
-  // For Instagram
-  if (window.location.host.includes("instagram.com")) {
-    videoElement = document.querySelector("video");
-  }
-
-  if (videoElement) {
-    videoElement.addEventListener("ended", scrollToNextVideo);
+function handleYouTube() {
+  const nextButton = document.querySelector(".ytp-next-button");
+  if (nextButton) {
+    nextButton.click();
   }
 }
 
-window.addEventListener("load", observeVideos);
+function handleInstagram() {
+  const nextButton = document.querySelector("._ac6e");
+  if (nextButton) {
+    nextButton.click();
+  }
+}
+
+// Listen for messages from the background script
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message === "startScrolling") {
+    console.log("startScrolling message received in content script");
+    startAutoScroll();
+    sendResponse({ status: "scrolling started" });
+  } else if (message === "stopScrolling") {
+    console.log("stopScrolling message received in content script");
+    stopAutoScroll();
+    sendResponse({ status: "scrolling stopped" });
+  }
+});
